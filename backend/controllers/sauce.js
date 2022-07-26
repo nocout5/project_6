@@ -14,10 +14,14 @@ exports.getOneSauce = (req, res, next) => {
 };
 
 exports.createSauce = (req, res, next) => {
-  const thingObject = JSON.parse(req.body.sauce);
-  delete thingObject._id;
+  const sauceObject = JSON.parse(req.body.sauce);
+  delete sauceObject._id;
   const sauce = new Sauce({
-    ...thingObject,
+    ...sauceObject,
+    likes: 0,
+    dislikes: 0,
+    usersLiked: [],
+    usersDisliked: [],
     userId: req.auth.userId,
     imageUrl: `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
@@ -53,11 +57,11 @@ exports.updateSauce = (req, res, next) => {
           const filename = sauce.imageUrl.split("/images/")[1];
           fs.unlink(`images/${filename}`, (err) => {
             if (err) {
-                console.log("failed to delete local image:"+err);
+              console.log("failed to delete local image:" + err);
             } else {
-                console.log('successfully deleted local image');                                
+              console.log("successfully deleted local image");
             }
-    })
+          });
         }
         Sauce.updateOne(
           { _id: req.params.id },
@@ -87,6 +91,43 @@ exports.deleteSauce = (req, res, next) => {
             .catch((error) => res.status(401).json({ error }));
         });
       }
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+};
+
+exports.likeSauce = (req, res, next) => {
+  Sauce.findOne({ _id: req.params.id })
+    .then((sauce) => {
+      if (req.body.like == 1) {
+        sauce.likes++;
+        sauce.usersLiked.push(req.auth.userId);
+      }
+      if (req.body.like == -1) {
+        sauce.dislikes++;
+        sauce.usersDisliked.push(req.auth.userId);
+      }
+      if (req.body.like == 0) {
+        let indexLike = sauce.usersLiked.indexOf(req.auth.userId);
+        let indexDislike = sauce.usersDisliked.indexOf(req.auth.userId);
+        if (indexLike != -1) {
+          sauce.likes--;
+          sauce.usersLiked.splice(indexLike, 1);
+        }
+        if (indexDislike != -1) {
+          sauce.dislikes--;
+          sauce.usersDisliked.splice(indexDislike, 1);
+        }
+      }
+      sauce
+        .save()
+        .then(() => {
+          res.status(201).json({ message: "Objet enregistré !" });
+        })
+        .catch((error) => {
+          res.status(400).json({ error });
+        });
     })
     .catch((error) => {
       res.status(500).json({ error });
