@@ -108,6 +108,7 @@ exports.likeSauce = (req, res, next) => {
         sauce.dislikes++;
         sauce.usersDisliked.push(req.auth.userId);
       }
+      //add like verificattion in db
       if (req.body.like == 0) {
         let indexLike = sauce.usersLiked.indexOf(req.auth.userId);
         let indexDislike = sauce.usersDisliked.indexOf(req.auth.userId);
