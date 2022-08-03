@@ -100,18 +100,17 @@ exports.deleteSauce = (req, res, next) => {
 exports.likeSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
-      if (req.body.like == 1) {
+      let indexLike = sauce.usersLiked.indexOf(req.auth.userId);
+      let indexDislike = sauce.usersDisliked.indexOf(req.auth.userId);
+      if (req.body.like == 1 && indexDislike == -1 && indexLike == -1) {
         sauce.likes++;
         sauce.usersLiked.push(req.auth.userId);
       }
-      if (req.body.like == -1) {
+      if (req.body.like == -1 && indexDislike == -1 && indexLike == -1) {
         sauce.dislikes++;
         sauce.usersDisliked.push(req.auth.userId);
       }
-      //add like verificattion in db
       if (req.body.like == 0) {
-        let indexLike = sauce.usersLiked.indexOf(req.auth.userId);
-        let indexDislike = sauce.usersDisliked.indexOf(req.auth.userId);
         if (indexLike != -1) {
           sauce.likes--;
           sauce.usersLiked.splice(indexLike, 1);
